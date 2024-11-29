@@ -1,24 +1,21 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from datetime import datetime, timedelta
 
 # --- Load the data ---
 file_path = r'C:\Users\rahulku\OneDrive - Radware LTD\Desktop\Code\Weekly.csv'
 df = pd.read_csv(file_path)
 
 # --- Data Preprocessing ---
-# Ensure 'Day of the Month' is in datetime format
+# Ensure 'Day of the Month' and other necessary columns are in the correct format
 df['Day of the Month'] = pd.to_datetime(df['Day of the Month'], errors='coerce')
 
 # Filter out rows where the category is 'Anomalies'
 df = df[df['category'] != 'Anomalies']
 
-# Get the current date
-today = datetime.today()
-
-# Filter the DataFrame to include only the last 7 days from today
-last_7_days_df = df[df['Day of the Month'] >= (today - timedelta(days=7))]
+# Filter data to only include the last 7 days
+latest_date = df['Day of the Month'].max()
+last_7_days_df = df[df['Day of the Month'] >= (latest_date - pd.Timedelta(days=7))]
 
 # Convert the necessary columns to numeric values, handling non-numeric entries gracefully
 last_7_days_df['maxAttackPacketRatePps'] = pd.to_numeric(last_7_days_df['maxAttackPacketRatePps'], errors='coerce')
