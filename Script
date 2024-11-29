@@ -1,0 +1,46 @@
+import pandas as pd
+from datetime import datetime
+import os
+
+# Replace with the actual path to your CSV file
+file_path = r'C:\Users\rahulku\OneDrive - Radware LTD\Desktop\Code\Test.csv'
+
+# Load the CSV file into a DataFrame
+df = pd.read_csv(file_path)
+
+# Ensure 'startDate' is in datetime format
+df['startDate'] = pd.to_datetime(df['startDate'], errors='coerce')
+
+# Get the current day of the week
+today_day = datetime.now().strftime('%A')
+
+# Get the current date (latest date in the dataset or today's date)
+current_date = df['startDate'].max()
+
+# Filter data for the last 7 days
+last_7_days_df = df[df['startDate'] >= current_date - pd.Timedelta(days=7)]
+
+# --- Table 1: Top 10 by maxAttackPacketRatePps (Last 7 Days) ---
+top_10_packet_rate_last_7_days_df = last_7_days_df.sort_values(by='maxAttackPacketRatePps', ascending=False).head(10)
+
+# --- Table 2: Top 10 by maxAttackRateBps (Last 7 Days) ---
+top_10_attack_rate_last_7_days_df = last_7_days_df.sort_values(by='maxAttackRateBps', ascending=False).head(10)
+
+# Export both tables to a single HTML file
+html_file_path = os.path.join(os.getcwd(), 'last_7_days_ddos_report.html')
+
+with open(html_file_path, 'w') as f:
+    # Write the report generation day
+    f.write(f'<h2>Report Generated on: {today_day}</h2>')
+
+    # Write the first table (Top 10 by maxAttackPacketRatePps for the last 7 days)
+    f.write('<h3>Top 10 by maxAttackPacketRatePps (Last 7 Days)</h3>')
+    f.write(top_10_packet_rate_last_7_days_df[['startDate', 'name', 'destAddress', 'protocol', 'actionType', 'maxAttackPacketRatePps']].to_html(index=False))
+    f.write('<br><br>')  # Add space between tables
+    
+    # Write the second table (Top 10 by maxAttackRateBps for the last 7 days)
+    f.write('<h3>Top 10 by maxAttackRateBps (Last 7 Days)</h3>')
+    f.write(top_10_attack_rate_last_7_days_df[['startDate', 'name', 'destAddress', 'protocol', 'actionType', 'maxAttackRateBps']].to_html(index=False))
+
+print(f"HTML file 'last_7_days_ddos_report.html' has been generated and saved in {os.getcwd()}.")
+
