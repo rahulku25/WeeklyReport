@@ -1,46 +1,99 @@
 import pandas as pd
-from datetime import datetime
-import os
+import matplotlib.pyplot as plt
+import numpy as np
+from datetime import datetime, timedelta
 
-# Replace with the actual path to your CSV file
-file_path = r'C:\Users\rahulku\OneDrive - Radware LTD\Desktop\Code\Test.csv'
-
-# Load the CSV file into a DataFrame
+# --- Load the data ---
+file_path = r'C:\Users\rahulku\OneDrive - Radware LTD\Desktop\Code\Weekly.csv'
 df = pd.read_csv(file_path)
 
-# Ensure 'startDate' is in datetime format
-df['startDate'] = pd.to_datetime(df['startDate'], errors='coerce')
+# --- Data Preprocessing ---
+# Ensure 'Day of the Month' is in datetime format
+df['Day of the Month'] = pd.to_datetime(df['Day of the Month'], errors='coerce')
 
-# Get the current day of the week
-today_day = datetime.now().strftime('%A')
+# Filter out rows where the category is 'Anomalies'
+df = df[df['category'] != 'Anomalies']
 
-# Get the current date (latest date in the dataset or today's date)
-current_date = df['startDate'].max()
+# Get the current date
+today = datetime.today()
 
-# Filter data for the last 7 days
-last_7_days_df = df[df['startDate'] >= current_date - pd.Timedelta(days=7)]
+# Filter the DataFrame to include only the last 7 days from today
+last_7_days_df = df[df['Day of the Month'] >= (today - timedelta(days=7))]
 
-# --- Table 1: Top 10 by maxAttackPacketRatePps (Last 7 Days) ---
-top_10_packet_rate_last_7_days_df = last_7_days_df.sort_values(by='maxAttackPacketRatePps', ascending=False).head(10)
+# Convert the necessary columns to numeric values, handling non-numeric entries gracefully
+last_7_days_df['maxAttackPacketRatePps'] = pd.to_numeric(last_7_days_df['maxAttackPacketRatePps'], errors='coerce')
+last_7_days_df['maxAttackRateBps'] = pd.to_numeric(last_7_days_df['maxAttackRateBps'], errors='coerce')
 
-# --- Table 2: Top 10 by maxAttackRateBps (Last 7 Days) ---
-top_10_attack_rate_last_7_days_df = last_7_days_df.sort_values(by='maxAttackRateBps', ascending=False).head(10)
+# --- Create Table: Number of Events per Day ---
+events_per_day = last_7_days_df.groupby('Day of the Month').size().reset_index(name='Number of Events')
 
-# Export both tables to a single HTML file
-html_file_path = os.path.join(os.getcwd(), 'last_7_days_ddos_report.html')
+# --- Table 1: Top 10 by maxAttackPacketRatePps ---
+top_10_packet_rate_df = last_7_days_df.sort_values(by='maxAttackPacketRatePps', ascending=False).head(10)
 
+# --- Table 2: Top 10 by maxAttackRateBps ---
+top_10_attack_rate_df = last_7_days_df.sort_values(by='maxAttackRateBps', ascending=False).head(10)
+
+# --- Pie Chart 1: Top 5 DDoS Categories by Cumulative Bandwidth (maxAttackRateBps) ---
+top_attack_data = last_7_days_df.groupby('category').agg({'maxAttackRateBps': 'sum'})
+top_attack_data = top_attack_data.sort_values(by='maxAttackRateBps', ascending=False).head(5)
+
+# Save the pie chart for categories by cumulative bandwidth
+category_pie_chart_path = 'category_pie_chart_last_7_days_no_anomalies.png'
+top_attack_data['maxAttackRateBps'].plot(kind='pie', autopct='%1.1f%%', title="Top 5 DDoS Categories by Cumulative Bandwidth (maxAttackRateBps) - Last 7 Days (Excluding Anomalies)")
+plt.ylabel('')
+plt.tight_layout()
+plt.savefig(category_pie_chart_path)
+plt.close()
+
+# --- Pie Chart 2: DDoS Attack Distribution by Category ---
+attack_type_distribution = last_7_days_df['category'].value_counts()
+
+# Save the pie chart for attack distribution
+attack_distribution_pie_chart_path = 'attack_distribution_pie_chart_last_7_days_no_anomalies.png'
+attack_type_distribution.plot(kind='pie', autopct='%1.1f%%', title="DDoS Attack Distribution by Category - Last 7 Days (Excluding Anomalies)")
+plt.ylabel('')
+plt.tight_layout()
+plt.savefig(attack_distribution_pie_chart_path)
+plt.close()
+
+# --- Pie Chart 3: Top 5 Devices by Bandwidth (maxAttackPacketRatePps) ---
+device_bandwidth = last_7_days_df.groupby('Device Name').agg({'maxAttackPacketRatePps': 'sum'})
+device_bandwidth = device_bandwidth.sort_values(by='maxAttackPacketRatePps', ascending=False).head(5)
+
+# Save the pie chart for top devices by bandwidth
+device_pie_chart_path = 'device_pie_chart_last_7_days_no_anomalies.png'
+device_bandwidth['maxAttackPacketRatePps'].plot(kind='pie', autopct='%1.1f%%', title="Top 5 Devices by Bandwidth (maxAttackPacketRatePps) - Last 7 Days (Excluding Anomalies)")
+plt.ylabel('')
+plt.tight_layout()
+plt.savefig(device_pie_chart_path)
+plt.close()
+
+# --- Export everything to an HTML file ---
+html_file_path = 'top_10_ddos_report_last_7_days_no_anomalies.html'
 with open(html_file_path, 'w') as f:
-    # Write the report generation day
-    f.write(f'<h2>Report Generated on: {today_day}</h2>')
+    # Write the "Number of Events per Day" table
+    f.write('<h2>Number of Events per Day - Last 7 Days (Excluding Anomalies)</h2>')
+    f.write(events_per_day.to_html(index=False))
+    f.write('<br><br>')  # Add space between tables
 
-    # Write the first table (Top 10 by maxAttackPacketRatePps for the last 7 days)
-    f.write('<h3>Top 10 by maxAttackPacketRatePps (Last 7 Days)</h3>')
-    f.write(top_10_packet_rate_last_7_days_df[['startDate', 'name', 'destAddress', 'protocol', 'actionType', 'maxAttackPacketRatePps']].to_html(index=False))
+    # Write the first table (Top 10 by maxAttackPacketRatePps)
+    f.write('<h2>Top 10 by maxAttackPacketRatePps - Last 7 Days (Excluding Anomalies)</h2>')
+    f.write(top_10_packet_rate_df[['startDate', 'Attack Name', 'destAddress', 'protocol', 'actionType', 'maxAttackPacketRatePps']].to_html(index=False))
     f.write('<br><br>')  # Add space between tables
     
-    # Write the second table (Top 10 by maxAttackRateBps for the last 7 days)
-    f.write('<h3>Top 10 by maxAttackRateBps (Last 7 Days)</h3>')
-    f.write(top_10_attack_rate_last_7_days_df[['startDate', 'name', 'destAddress', 'protocol', 'actionType', 'maxAttackRateBps']].to_html(index=False))
+    # Write the second table (Top 10 by maxAttackRateBps)
+    f.write('<h2>Top 10 by maxAttackRateBps - Last 7 Days (Excluding Anomalies)</h2>')
+    f.write(top_10_attack_rate_df[['startDate', 'Attack Name', 'destAddress', 'protocol', 'actionType', 'maxAttackRateBps']].to_html(index=False))
 
-print(f"HTML file 'last_7_days_ddos_report.html' has been generated and saved in {os.getcwd()}.")
+    # Add the pie charts to the HTML file
+    f.write('<br><br>')
+    f.write('<h2>Top 5 DDoS Categories by Cumulative Bandwidth (Excluding Anomalies)</h2>')
+    f.write(f'<img src="{category_pie_chart_path}" alt="Top 5 DDoS Categories by Cumulative Bandwidth" style="width:80%"><br><br>')
 
+    f.write('<h2>DDoS Attack Distribution by Category (Excluding Anomalies)</h2>')
+    f.write(f'<img src="{attack_distribution_pie_chart_path}" alt="DDoS Attack Distribution by Category" style="width:80%"><br><br>')
+
+    f.write('<h2>Top 5 Devices by Bandwidth (Excluding Anomalies)</h2>')
+    f.write(f'<img src="{device_pie_chart_path}" alt="Top 5 Devices by Bandwidth" style="width:80%"><br><br>')
+
+print(f"HTML file '{html_file_path}' has been generated with both tables and pie charts for the last 7 days excluding Anomalies.")
