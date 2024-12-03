@@ -7,13 +7,16 @@ file_path = r'C:\Users\rahulku\OneDrive - Radware LTD\Desktop\Code\Weekly.csv'
 df = pd.read_csv(file_path)
 
 # --- Data Preprocessing ---
-# Ensure 'Day of the Month' and other necessary columns are in the correct format
+# Manually set a fixed date for testing purposes (in this case 2024-11-22)
 df['Day of the Month'] = pd.to_datetime(df['Day of the Month'], errors='coerce')
+
+# If you need to override any bad dates or set a fixed date for all rows:
+df['Day of the Month'] = df['Day of the Month'].fillna(pd.to_datetime('2024-11-22'))
 
 # Filter out rows where the category is 'Anomalies'
 df = df[df['category'] != 'Anomalies']
 
-# Filter data to only include the last 7 days
+# Filter data to include only the last 7 days based on the most recent date in the data
 latest_date = df['Day of the Month'].max()
 last_7_days_df = df[df['Day of the Month'] >= (latest_date - pd.Timedelta(days=7))]
 
@@ -23,6 +26,9 @@ last_7_days_df['maxAttackRateBps'] = pd.to_numeric(last_7_days_df['maxAttackRate
 
 # --- Create Table: Number of Events per Day ---
 events_per_day = last_7_days_df.groupby('Day of the Month').size().reset_index(name='Number of Events')
+
+# Sort the events table by the day of the month and keep only the last 7 days
+events_per_day = events_per_day.sort_values(by='Day of the Month', ascending=False).head(7)
 
 # --- Table 1: Top 10 by maxAttackPacketRatePps ---
 top_10_packet_rate_df = last_7_days_df.sort_values(by='maxAttackPacketRatePps', ascending=False).head(10)
@@ -36,9 +42,20 @@ top_attack_data = top_attack_data.sort_values(by='maxAttackRateBps', ascending=F
 
 # Save the pie chart for categories by cumulative bandwidth
 category_pie_chart_path = 'category_pie_chart_last_7_days_no_anomalies.png'
-top_attack_data['maxAttackRateBps'].plot(kind='pie', autopct='%1.1f%%', title="Top 5 DDoS Categories by Cumulative Bandwidth (maxAttackRateBps) - Last 7 Days (Excluding Anomalies)")
-plt.ylabel('')
-plt.tight_layout()
+
+# Set figure size and plot with better visibility
+plt.figure(figsize=(10, 10))  # Larger figure to accommodate the text
+
+# Use labeldistance and fontsize to avoid overlapping
+top_attack_data['maxAttackRateBps'].plot(kind='pie', 
+                                          autopct='%1.1f%%', 
+                                          title="Top 5 DDoS Categories by Cumulative Bandwidth (maxAttackRateBps) - Last 7 Days (Excluding Anomalies)",
+                                          startangle=90, 
+                                          labeldistance=1.1,   # Increase this value to move labels further out
+                                          fontsize=12,         # Adjust the font size of the labels
+                                          pctdistance=0.85)    # Adjust the percentage label distance from the center
+plt.ylabel('')  # Hide the ylabel to avoid overlapping text
+plt.tight_layout()  # Adjust layout to ensure the plot is well-fitted
 plt.savefig(category_pie_chart_path)
 plt.close()
 
@@ -47,9 +64,20 @@ attack_type_distribution = last_7_days_df['category'].value_counts()
 
 # Save the pie chart for attack distribution
 attack_distribution_pie_chart_path = 'attack_distribution_pie_chart_last_7_days_no_anomalies.png'
-attack_type_distribution.plot(kind='pie', autopct='%1.1f%%', title="DDoS Attack Distribution by Category - Last 7 Days (Excluding Anomalies)")
-plt.ylabel('')
-plt.tight_layout()
+
+# Set figure size and plot with better visibility
+plt.figure(figsize=(10, 10))  # Larger figure to accommodate the text
+
+# Use labeldistance and fontsize to avoid overlapping
+attack_type_distribution.plot(kind='pie', 
+                              autopct='%1.1f%%', 
+                              title="DDoS Attack Distribution by Category - Last 7 Days (Excluding Anomalies)",
+                              startangle=90, 
+                              labeldistance=1.1,   # Increase this value to move labels further out
+                              fontsize=12,         # Adjust the font size of the labels
+                              pctdistance=0.85)    # Adjust the percentage label distance from the center
+plt.ylabel('')  # Hide the ylabel to avoid overlapping text
+plt.tight_layout()  # Adjust layout to ensure the plot is well-fitted
 plt.savefig(attack_distribution_pie_chart_path)
 plt.close()
 
@@ -59,36 +87,47 @@ device_bandwidth = device_bandwidth.sort_values(by='maxAttackPacketRatePps', asc
 
 # Save the pie chart for top devices by bandwidth
 device_pie_chart_path = 'device_pie_chart_last_7_days_no_anomalies.png'
-device_bandwidth['maxAttackPacketRatePps'].plot(kind='pie', autopct='%1.1f%%', title="Top 5 Devices by Bandwidth (maxAttackPacketRatePps) - Last 7 Days (Excluding Anomalies)")
-plt.ylabel('')
-plt.tight_layout()
+
+# Set figure size and plot with better visibility
+plt.figure(figsize=(10, 10))  # Larger figure to accommodate the text
+
+# Use labeldistance and fontsize to avoid overlapping
+device_bandwidth['maxAttackPacketRatePps'].plot(kind='pie', 
+                                                autopct='%1.1f%%', 
+                                                title="Top 5 Devices by Bandwidth (maxAttackPacketRatePps) - Last 7 Days (Excluding Anomalies)",
+                                                startangle=90, 
+                                                labeldistance=1.1,   # Increase this value to move labels further out
+                                                fontsize=12,         # Adjust the font size of the labels
+                                                pctdistance=0.85)    # Adjust the percentage label distance from the center
+plt.ylabel('')  # Hide the ylabel to avoid overlapping text
+plt.tight_layout()  # Adjust layout to ensure the plot is well-fitted
 plt.savefig(device_pie_chart_path)
 plt.close()
 
 # --- Export everything to an HTML file ---
 html_file_path = 'top_10_ddos_report_last_7_days_no_anomalies.html'
 with open(html_file_path, 'w') as f:
-    # Write the "Number of Events per Day" table
+    # Write the "Number of Events per Day" table (restrict to the last 7 days)
     f.write('<h2>Number of Events per Day - Last 7 Days (Excluding Anomalies)</h2>')
     f.write(events_per_day.to_html(index=False))
     f.write('<br><br>')  # Add space between tables
 
-    # Write the first table (Top 10 by maxAttackPacketRatePps)
+    # Write the first table (Top 10 by maxAttackPacketRatePps) including Device Name and Policy Name
     f.write('<h2>Top 10 by maxAttackPacketRatePps - Last 7 Days (Excluding Anomalies)</h2>')
-    f.write(top_10_packet_rate_df[['startDate', 'Attack Name', 'destAddress', 'protocol', 'actionType', 'maxAttackPacketRatePps']].to_html(index=False))
+    f.write(top_10_packet_rate_df[['Device Name', 'Policy Name', 'startDate', 'protocol', 'actionType', 'destAddress', 'Attack Name', 'maxAttackPacketRatePps']].to_html(index=False))
     f.write('<br><br>')  # Add space between tables
     
-    # Write the second table (Top 10 by maxAttackRateBps)
+    # Write the second table (Top 10 by maxAttackRateBps) including Device Name and Policy Name
     f.write('<h2>Top 10 by maxAttackRateBps - Last 7 Days (Excluding Anomalies)</h2>')
-    f.write(top_10_attack_rate_df[['startDate', 'Attack Name', 'destAddress', 'protocol', 'actionType', 'maxAttackRateBps']].to_html(index=False))
+    f.write(top_10_attack_rate_df[['Device Name', 'Policy Name', 'startDate', 'protocol', 'actionType', 'destAddress', 'Attack Name', 'maxAttackRateBps']].to_html(index=False))
 
     # Add the pie charts to the HTML file
     f.write('<br><br>')
     f.write('<h2>Top 5 DDoS Categories by Cumulative Bandwidth (Excluding Anomalies)</h2>')
     f.write(f'<img src="{category_pie_chart_path}" alt="Top 5 DDoS Categories by Cumulative Bandwidth" style="width:80%"><br><br>')
 
-    f.write('<h2>DDoS Attack Distribution by Category (Excluding Anomalies)</h2>')
-    f.write(f'<img src="{attack_distribution_pie_chart_path}" alt="DDoS Attack Distribution by Category" style="width:80%"><br><br>')
+    f.write('<h2>DDoS Attack Distribution by Attack Category (Excluding Anomalies)</h2>')
+    f.write(f'<img src="{attack_distribution_pie_chart_path}" alt="DDoS Attack Distribution by Attack Category" style="width:80%"><br><br>')
 
     f.write('<h2>Top 5 Devices by Bandwidth (Excluding Anomalies)</h2>')
     f.write(f'<img src="{device_pie_chart_path}" alt="Top 5 Devices by Bandwidth" style="width:80%"><br><br>')
