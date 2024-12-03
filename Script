@@ -46,14 +46,19 @@ category_pie_chart_path = 'category_pie_chart_last_7_days_no_anomalies.png'
 # Set figure size and plot with better visibility
 plt.figure(figsize=(10, 10))  # Larger figure to accommodate the text
 
-# Use labeldistance and fontsize to avoid overlapping
-top_attack_data['maxAttackRateBps'].plot(kind='pie', 
-                                          autopct='%1.1f%%', 
-                                          title="Top 5 DDoS Categories by Cumulative Bandwidth (maxAttackRateBps) - Last 7 Days (Excluding Anomalies)",
-                                          startangle=90, 
-                                          labeldistance=1.1,   # Increase this value to move labels further out
-                                          fontsize=12,         # Adjust the font size of the labels
-                                          pctdistance=0.85)    # Adjust the percentage label distance from the center
+# Plot the pie chart
+ax = top_attack_data['maxAttackRateBps'].plot(kind='pie', 
+                                              autopct='%1.1f%%', 
+                                              title="Top 5 DDoS Categories by Cumulative Bandwidth (maxAttackRateBps) - Last 7 Days (Excluding Anomalies)",
+                                              startangle=90, 
+                                              labeldistance=1.1,   # Increase this value to move labels further out
+                                              fontsize=12,         # Adjust the font size of the labels
+                                              pctdistance=0.85)    # Adjust the percentage label distance from the center
+
+# Adjust labels to make them vertical
+for text in ax.texts:
+    text.set_rotation('vertical')  # Make the label text vertical
+
 plt.ylabel('')  # Hide the ylabel to avoid overlapping text
 plt.tight_layout()  # Adjust layout to ensure the plot is well-fitted
 plt.savefig(category_pie_chart_path)
@@ -66,16 +71,21 @@ attack_type_distribution = last_7_days_df['category'].value_counts()
 attack_distribution_pie_chart_path = 'attack_distribution_pie_chart_last_7_days_no_anomalies.png'
 
 # Set figure size and plot with better visibility
-plt.figure(figsize=(10, 10))  # Larger figure to accommodate the text
+plt.figure(figsize=(19, 19))  # Larger figure to accommodate the text
 
-# Use labeldistance and fontsize to avoid overlapping
-attack_type_distribution.plot(kind='pie', 
-                              autopct='%1.1f%%', 
-                              title="DDoS Attack Distribution by Category - Last 7 Days (Excluding Anomalies)",
-                              startangle=90, 
-                              labeldistance=1.1,   # Increase this value to move labels further out
-                              fontsize=12,         # Adjust the font size of the labels
-                              pctdistance=0.85)    # Adjust the percentage label distance from the center
+# Plot the pie chart
+ax = attack_type_distribution.plot(kind='pie', 
+                                   autopct='%1.1f%%', 
+                                   title="DDoS Attack Distribution by Category - Last 7 Days (Excluding Anomalies)",
+                                   startangle=90, 
+                                   labeldistance=1.1,   # Increase this value to move labels further out
+                                   fontsize=12,         # Adjust the font size of the labels
+                                   pctdistance=0.85)    # Adjust the percentage label distance from the center
+
+# Adjust labels to make them vertical
+for text in ax.texts:
+    text.set_rotation('vertical')  # Make the label text vertical
+
 plt.ylabel('')  # Hide the ylabel to avoid overlapping text
 plt.tight_layout()  # Adjust layout to ensure the plot is well-fitted
 plt.savefig(attack_distribution_pie_chart_path)
@@ -89,16 +99,21 @@ device_bandwidth = device_bandwidth.sort_values(by='maxAttackPacketRatePps', asc
 device_pie_chart_path = 'device_pie_chart_last_7_days_no_anomalies.png'
 
 # Set figure size and plot with better visibility
-plt.figure(figsize=(10, 10))  # Larger figure to accommodate the text
+plt.figure(figsize=(8, 8))  # Larger figure to accommodate the text
 
-# Use labeldistance and fontsize to avoid overlapping
-device_bandwidth['maxAttackPacketRatePps'].plot(kind='pie', 
-                                                autopct='%1.1f%%', 
-                                                title="Top 5 Devices by Bandwidth (maxAttackPacketRatePps) - Last 7 Days (Excluding Anomalies)",
-                                                startangle=90, 
-                                                labeldistance=1.1,   # Increase this value to move labels further out
-                                                fontsize=12,         # Adjust the font size of the labels
-                                                pctdistance=0.85)    # Adjust the percentage label distance from the center
+# Plot the pie chart
+ax = device_bandwidth['maxAttackPacketRatePps'].plot(kind='pie', 
+                                                    autopct='%1.1f%%', 
+                                                    title="Top 5 Devices by Bandwidth (maxAttackPacketRatePps) - Last 7 Days (Excluding Anomalies)",
+                                                    startangle=90, 
+                                                    labeldistance=1.1,   # Increase this value to move labels further out
+                                                    fontsize=12,         # Adjust the font size of the labels
+                                                    pctdistance=0.85)    # Adjust the percentage label distance from the center
+
+# Adjust labels to make them vertical
+for text in ax.texts:
+    text.set_rotation('vertical')  # Make the label text vertical
+
 plt.ylabel('')  # Hide the ylabel to avoid overlapping text
 plt.tight_layout()  # Adjust layout to ensure the plot is well-fitted
 plt.savefig(device_pie_chart_path)
