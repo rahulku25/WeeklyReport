@@ -1,16 +1,16 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+from dateutil.parser import parse
 
 # --- Load the data ---
 file_path = r'C:\Users\rahulku\OneDrive - Radware LTD\Desktop\Code\Weekly.csv'
 df = pd.read_csv(file_path)
 
 # --- Data Preprocessing ---
-# Manually set a fixed date for testing purposes (in this case 2024-11-22)
-df['Day of the Month'] = pd.to_datetime(df['Day of the Month'], errors='coerce')
+# Use dateutil.parser.parse to parse the 'Day of the Month' column
+df['Day of the Month'] = df['Day of the Month'].apply(lambda x: parse(str(x)))
 
-# If you need to override any bad dates or set a fixed date for all rows:
+# If there are any invalid dates, we can fill them with a specific date (e.g., 2024-11-22)
 df['Day of the Month'] = df['Day of the Month'].fillna(pd.to_datetime('2024-11-22'))
 
 # Filter out rows where the category is 'Anomalies'
@@ -147,4 +147,9 @@ with open(html_file_path, 'w') as f:
     f.write('<h2>Top 5 Devices by Bandwidth (Excluding Anomalies)</h2>')
     f.write(f'<img src="{device_pie_chart_path}" alt="Top 5 Devices by Bandwidth" style="width:80%"><br><br>')
 
-print(f"HTML file '{html_file_path}' has been generated with both tables and pie charts for the last 7 days excluding Anomalies.")
+print(f"HTML file '{html_file_path}' has been generated with both tables and pie charts for the last 7 days excluding Anomalies.")  
+
+# Example of timestamp parsing with dateutil.parser
+timestamp_string = "2024-11-22 11:30:45"
+datetime_object = parse(timestamp_string)
+print(datetime_object)
