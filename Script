@@ -91,7 +91,7 @@ plt.tight_layout()  # Adjust layout to ensure the plot is well-fitted
 plt.savefig(attack_distribution_pie_chart_path)
 plt.close()
 
-# --- Pie Chart 3: Top 5 Devices by Bandwidth (maxAttackPacketRatePps) ---
+# --- Pie Chart 3: Top 5 Devices by PPS (maxAttackPacketRatePps) ---
 device_bandwidth = last_7_days_df.groupby('Device Name').agg({'maxAttackPacketRatePps': 'sum'})
 device_bandwidth = device_bandwidth.sort_values(by='maxAttackPacketRatePps', ascending=False).head(5)
 
@@ -104,7 +104,7 @@ plt.figure(figsize=(8, 8))  # Larger figure to accommodate the text
 # Plot the pie chart
 ax = device_bandwidth['maxAttackPacketRatePps'].plot(kind='pie', 
                                                     autopct='%1.1f%%', 
-                                                    title="Top 5 Devices by Bandwidth (maxAttackPacketRatePps) - Last 7 Days (Excluding Anomalies)",
+                                                    title="Top 5 Devices by PPS (maxAttackPacketRatePps) - Last 7 Days (Excluding Anomalies)",
                                                     startangle=90, 
                                                     labeldistance=1.1,   # Increase this value to move labels further out
                                                     fontsize=12,         # Adjust the font size of the labels
@@ -144,8 +144,8 @@ with open(html_file_path, 'w') as f:
     f.write('<h2>DDoS Attack Distribution by Attack Category (Excluding Anomalies)</h2>')
     f.write(f'<img src="{attack_distribution_pie_chart_path}" alt="DDoS Attack Distribution by Attack Category" style="width:80%"><br><br>')
 
-    f.write('<h2>Top 5 Devices by Bandwidth (Excluding Anomalies)</h2>')
-    f.write(f'<img src="{device_pie_chart_path}" alt="Top 5 Devices by Bandwidth" style="width:80%"><br><br>')
+    f.write('<h2>Top 5 Devices by PPS (Excluding Anomalies)</h2>')
+    f.write(f'<img src="{device_pie_chart_path}" alt="Top 5 Devices by PPS" style="width:80%"><br><br>')
 
 print(f"HTML file '{html_file_path}' has been generated with both tables and pie charts for the last 7 days excluding Anomalies.")  
 
