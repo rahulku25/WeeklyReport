@@ -17,6 +17,10 @@ last_7_days_df = df[df['Day of the Month'] >= (latest_date - pd.Timedelta(days=7
 last_7_days_df['maxAttackPacketRatePps'] = pd.to_numeric(last_7_days_df['maxAttackPacketRatePps'], errors='coerce')
 last_7_days_df['maxAttackRateBps'] = pd.to_numeric(last_7_days_df['maxAttackRateBps'], errors='coerce')
 
+# --- Convert maxAttackRateBps to Mbps ---
+last_7_days_df['maxAttackRateMbps'] = last_7_days_df['maxAttackRateBps'] / 1_000_000
+last_7_days_df['maxAttackRateMbps'] = last_7_days_df['maxAttackRateMbps'].round(2)  # Optional: Round to 2 decimal places
+
 # --- Create Table: Number of Events per Day ---
 events_per_day = last_7_days_df.groupby('Day of the Month').size().reset_index(name='Number of Events')
 events_per_day = events_per_day.sort_values(by='Day of the Month', ascending=False).head(7)
@@ -24,8 +28,8 @@ events_per_day = events_per_day.sort_values(by='Day of the Month', ascending=Fal
 # --- Table 1: Top 10 by Max Attack PacketRate(Pps) ---
 top_10_packet_rate_df = last_7_days_df.sort_values(by='maxAttackPacketRatePps', ascending=False).head(10)
 
-# --- Table 2: Top 10 by Max Attack Rate(Bps) ---
-top_10_attack_rate_df = last_7_days_df.sort_values(by='maxAttackRateBps', ascending=False).head(10)
+# --- Table 2: Top 10 by Max Attack Rate(Mbps) ---
+top_10_attack_rate_df = last_7_days_df.sort_values(by='maxAttackRateMbps', ascending=False).head(10)
 
 # --- Pie Chart Data for Google Charts ---
 top_attack_data = last_7_days_df.groupby('category').agg({'maxAttackRateBps': 'sum'})
@@ -66,12 +70,12 @@ with open(html_file_path, 'w') as f:
         font-family: Arial, sans-serif;
     }
     th, td {
-        border: 1px solid #ddd;
+        border: 1px solid #0000FF;  /* Blue border */
         padding: 12px 15px;
         text-align: left;
     }
     th {
-        background-color: #0000FF;
+        background-color: #0000FF;  /* Blue header background */
         color: white;
         font-weight: bold;
     }
@@ -98,9 +102,9 @@ with open(html_file_path, 'w') as f:
     f.write(top_10_packet_rate_df[['Device Name', 'Policy Name', 'startDate', 'protocol', 'actionType', 'destAddress', 'Attack Name', 'maxAttackPacketRatePps']].to_html(index=False, border=0, classes="styled-table"))
     f.write('<br><br>')  # Add space between tables
     
-    # Write the second table (Top 10 by Max Attack Rate(Bps))
-    f.write('<h2>Top 10 by Max Attack Rate (Bps)</h2>')
-    f.write(top_10_attack_rate_df[['Device Name', 'Policy Name', 'startDate', 'protocol', 'actionType', 'destAddress', 'Attack Name', 'maxAttackRateBps']].to_html(index=False, border=0, classes="styled-table"))
+    # Write the second table (Top 10 by Max Attack Rate (Mbps))
+    f.write('<h2>Top 10 by Max Attack Rate (Mbps)</h2>')
+    f.write(top_10_attack_rate_df[['Device Name', 'Policy Name', 'startDate', 'protocol', 'actionType', 'destAddress', 'Attack Name', 'maxAttackRateMbps']].to_html(index=False, border=0, classes="styled-table"))
 
     # Embed the Google Charts for Pie Charts
 
@@ -144,6 +148,7 @@ with open(html_file_path, 'w') as f:
     f.write('var chart = new google.visualization.PieChart(document.getElementById("device_chart"));')
     f.write('chart.draw(data, options);')
     f.write('}')
+
     f.write('</script>')
 
     # Placeholder divs for the charts
