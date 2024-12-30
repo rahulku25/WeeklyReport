@@ -5,13 +5,13 @@ from io import BytesIO
 import base64
 
 # --- Load the data ---
-file_path = r'C:\Users\rahulku\OneDrive - Radware LTD\Desktop\Code\Weekly12.csv'
+file_path = r'C:\Users\rahulku\OneDrive - Radware LTD\Desktop\Code\Weekly30.csv'
 df = pd.read_csv(file_path)
 
 # --- Data Preprocessing ---
 df['Day of the Month'] = df['Day of the Month'].apply(lambda x: parse(str(x)))
-df['Day of the Month'] = df['Day of the Month'].fillna(pd.to_datetime('2024-12-2'))
-df = df[df['category'] != 'Anomalies']
+df['Day of the Month'] = df['Day of the Month'].fillna(pd.to_datetime('2024-12-9'))
+df = df[df['category'] != 'Anomalies']  # Exclude anomalies
 latest_date = df['Day of the Month'].max()
 last_7_days_df = df[df['Day of the Month'] >= (latest_date - pd.Timedelta(days=7))]
 last_7_days_df['maxAttackPacketRatePps'] = pd.to_numeric(last_7_days_df['maxAttackPacketRatePps'], errors='coerce')
@@ -40,10 +40,10 @@ google_chart_data = []
 for category, row in top_attack_data.iterrows():
     google_chart_data.append([category, row['maxAttackRateBps']])
 
-# --- Pie Chart Data for Attack Distribution ---
-attack_type_distribution = last_7_days_df['category'].value_counts()
+# --- Pie Chart Data for Attack Distribution (Exclude Intrusions) ---
+attack_type_distribution = last_7_days_df[last_7_days_df['category'] != 'Intrusion']['category'].value_counts()
 
-# Prepare the data for the Google Chart (attack distribution by category)
+# Prepare the data for the Google Chart (attack distribution by category, excluding Intrusions)
 attack_distribution_data = []
 for category, count in attack_type_distribution.items():
     attack_distribution_data.append([category, count])
@@ -58,16 +58,17 @@ for device, row in device_bandwidth.iterrows():
     device_bandwidth_data.append([device, row['maxAttackPacketRatePps']])
 
 # --- Export everything to an HTML file with Google Charts ---
-html_file_path = 'top_10_ddos_report_last_7_days_google_charts.html'
+html_file_path = 'top_10_ddos_report_last_7_days_google_charts_with_bar_graph.html'
 with open(html_file_path, 'w') as f:
-    # Add CSS styles for the tables
-    f.write('<style>')
-    f.write('''
+    # Add CSS styles for the tables with adjustable size and dark blue header
+    f.write('<style> ')
+    f.write(''' 
     table {
         width: 100%;
         border-collapse: collapse;
         margin: 20px 0;
         font-family: Arial, sans-serif;
+        table-layout: auto;  /* Allow table to auto-size columns */
     }
     th, td {
         border: 1px solid #0000FF;  /* Blue border */
@@ -75,7 +76,7 @@ with open(html_file_path, 'w') as f:
         text-align: left;
     }
     th {
-        background-color: #0000FF;  /* Blue header background */
+        background-color: #003366;  /* Dark Blue header background */
         color: white;
         font-weight: bold;
     }
@@ -89,30 +90,56 @@ with open(html_file_path, 'w') as f:
         font-size: 1.5em;
         margin: 10px;
     }
+    .table-container {
+        max-width: 100%;   
+        overflow-x: auto;  
+    }
     ''')
     f.write('</style>')
 
     # Write the "Number of Events per Day" table
     f.write('<h2>Number of Events per Day - Last 7 Days (Excluding Anomalies)</h2>')
+    f.write('<div class="table-container">')
     f.write(events_per_day.to_html(index=False, border=0, classes="styled-table"))
-    f.write('<br><br>')  # Add space between tables
+    f.write('</div><br><br>')  # Add space between tables
+
+    # --- Google Charts for Bar Graph ---
+    f.write('<h2>Bar Graph: Number of Events per Day</h2>')
+    f.write('<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>')
+    f.write('<script type="text/javascript">')
+    f.write('google.charts.load("current", {"packages":["corechart", "bar"]});')
+
+    f.write('google.charts.setOnLoadCallback(drawEventsChart);')
+    f.write('function drawEventsChart() {')
+    f.write('var data = google.visualization.arrayToDataTable([["Date", "Number of Events"],')
+    
+    for row in events_per_day.itertuples():
+        f.write(f'["{row[1].strftime("%Y-%m-%d")}", {row[2]}],')  # Formatting date to YYYY-MM-DD
+    
+    f.write(']);')
+    f.write('var options = {title: "Number of Events per Day (Last 7 Days)", chartArea: {width: "60%"}, hAxis: {title: "Date"}, vAxis: {title: "Number of Events"}};')
+    f.write('var chart = new google.visualization.BarChart(document.getElementById("events_bar_chart"));')
+    f.write('chart.draw(data, options);')
+    f.write('}')
+    f.write('</script>')
+
+    f.write('<div id="events_bar_chart" style="width: 900px; height: 500px;"></div><br><br>')
 
     # Write the first table (Top 10 by Max Attack PacketRate (Pps))
     f.write('<h2>Top 10 by Max Attack Packet Rate(Pps)</h2>')
+    f.write('<div class="table-container">')
     f.write(top_10_packet_rate_df[['Device Name', 'Policy Name', 'startDate', 'protocol', 'actionType', 'destAddress', 'Attack Name', 'maxAttackPacketRatePps']].to_html(index=False, border=0, classes="styled-table"))
-    f.write('<br><br>')  # Add space between tables
+    f.write('</div><br><br>')  # Add space between tables
     
     # Write the second table (Top 10 by Max Attack Rate (Mbps))
     f.write('<h2>Top 10 by Max Attack Rate (Mbps)</h2>')
+    f.write('<div class="table-container">')
     f.write(top_10_attack_rate_df[['Device Name', 'Policy Name', 'startDate', 'protocol', 'actionType', 'destAddress', 'Attack Name', 'maxAttackRateMbps']].to_html(index=False, border=0, classes="styled-table"))
+    f.write('</div><br><br>')
 
-    # Embed the Google Charts for Pie Charts
-
-    # Include Google Charts library
-    f.write('<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>')
+    # Embed Google Charts for Pie Charts
     f.write('<script type="text/javascript">')
-    f.write('google.charts.load("current", {"packages":["corechart"]});')
-
+    
     # Top 5 DDoS Categories by Cumulative Bandwidth
     f.write('google.charts.setOnLoadCallback(drawCategoryChart);')
     f.write('function drawCategoryChart() {')
@@ -125,14 +152,14 @@ with open(html_file_path, 'w') as f:
     f.write('chart.draw(data, options);')
     f.write('}')
 
-    # DDoS Attack Distribution by Attack Category
+    # DDoS Attack Distribution by Attack Category (Excluding Intrusions)
     f.write('google.charts.setOnLoadCallback(drawAttackDistributionChart);')
     f.write('function drawAttackDistributionChart() {')
     f.write('var data = google.visualization.arrayToDataTable([["Category", "Count"],')
     for row in attack_distribution_data:
         f.write(f'["{row[0]}", {row[1]}],')
     f.write(']);')
-    f.write('var options = {title: "DDoS Attack Distribution by Attack Category"};')
+    f.write('var options = {title: "DDoS Attack Distribution by Attack Category (Excluding Intrusions)"};')
     f.write('var chart = new google.visualization.PieChart(document.getElementById("attack_distribution_chart"));')
     f.write('chart.draw(data, options);')
     f.write('}')
@@ -148,17 +175,16 @@ with open(html_file_path, 'w') as f:
     f.write('var chart = new google.visualization.PieChart(document.getElementById("device_chart"));')
     f.write('chart.draw(data, options);')
     f.write('}')
-
     f.write('</script>')
 
     # Placeholder divs for the charts
     f.write('<h2>Top 5 DDoS Categories by Cumulative Bandwidth (Excluding Anomalies)</h2>')
     f.write('<div id="category_chart" style="width: 900px; height: 500px;"></div><br><br>')
 
-    f.write('<h2>DDoS Attack Distribution by Attack Category (Excluding Anomalies)</h2>')
+    f.write('<h2>DDoS Attack Distribution by Attack Category (Excluding Intrusions)</h2>')
     f.write('<div id="attack_distribution_chart" style="width: 900px; height: 500px;"></div><br><br>')
 
     f.write('<h2>Top 5 Devices by PPS (Excluding Anomalies)</h2>')
     f.write('<div id="device_chart" style="width: 900px; height: 500px;"></div><br><br>')
 
-    print(f"HTML file '{html_file_path}' has been generated with both tables and pie charts for the last 7 days excluding Anomalies.")
+    print(f"HTML file '{html_file_path}' has been generated with both tables, pie charts, and a bar graph for events per day.")
